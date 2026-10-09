@@ -4,6 +4,9 @@ const cors = require('cors');
 const pool = require('./db');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const projectRoutes = require('./routes/projects');
+const sprintRoutes = require('./routes/sprints');
+const taskRoutes = require('./routes/tasks');
 
 const app = express();
 app.use(cors());
@@ -21,6 +24,9 @@ app.get('/api/health', async (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api', sprintRoutes); // /api/projects/:id/sprints and /api/sprints/:id
+app.use('/api', taskRoutes);   // /api/projects/:id/tasks and /api/tasks/:id
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`TaskFlow API running on port ${PORT}`));
