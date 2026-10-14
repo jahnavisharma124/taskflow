@@ -128,7 +128,10 @@ export default function ProjectBoard() {
           <h1>{project.name}</h1>
           <p className="muted">{project.description}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setModalTask(null)}>+ New task</button>
+        <div className="row-form">
+          <Link to={`/projects/${id}/report`} className="btn">Report</Link>
+          <button className="btn btn-primary" onClick={() => setModalTask(null)}>+ New task</button>
+        </div>
       </div>
 
       {error && <div className="error">{error}</div>}

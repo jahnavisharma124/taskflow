@@ -1,0 +1,9 @@
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin: 1rem 0; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+.stat-num { font-size: 1.8rem; font-weight: 700; }
+.stat-num.overdue { color: var(--danger); }
+.report-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.report-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
+.report-table td { padding: 0.5rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.bar { background: #e5e7eb; border-radius: 999px; height: 8px; width: 160px; overflow: hidden; margin-bottom: 0.2rem; }
+.bar-fill { background: var(--primary); height: 100%; }

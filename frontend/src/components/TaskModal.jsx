@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import TimeLogs from './TimeLogs';
 
 // Popup for creating a new task (task = null) or editing an existing one.
 export default function TaskModal({ task, projectId, members, sprints, canManage, onClose, onSaved }) {
@@ -147,6 +148,8 @@ export default function TaskModal({ task, projectId, members, sprints, canManage
             )}
           </div>
         </form>
+
+        {editing && <TimeLogs taskId={task.id} canManage={canManage} />}
 
         {editing && (
           <div className="comments">
