@@ -4,8 +4,20 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
 const { authenticate } = require('../middleware/auth');
+const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
+
+// Limit login attempts to 10 requests per 15 minutes per IP.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    message: 'Too many login attempts. Please try again after 15 minutes.'
+  }
+});
 
 function makeToken(user) {
   return jwt.sign(
@@ -18,16 +30,14 @@ function makeToken(user) {
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password } = req.body || {};
 
-    // Check required fields
     if (!name || !email || !password) {
       return res.status(400).json({
         message: 'Name, email and password are required'
       });
     }
 
-    // Validate name
     if (typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({
         message: 'Name must be a non-empty string'
@@ -40,7 +50,6 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Validate email
     if (
       typeof email !== 'string' ||
       email.trim().length > 254 ||
@@ -51,7 +60,6 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Validate password
     if (typeof password !== 'string') {
       return res.status(400).json({
         message: 'Password must be a string'
@@ -73,7 +81,6 @@ router.post('/register', async (req, res) => {
     const cleanName = name.trim();
     const cleanEmail = email.trim().toLowerCase();
 
-    // Check whether the email is already registered
     const [existing] = await pool.query(
       'SELECT id FROM users WHERE email = ?',
       [cleanEmail]
@@ -85,12 +92,12 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Hash the password before saving it
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Everyone registers as a member
+    // New registrations always receive the member role.
     const [result] = await pool.query(
-      'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
+      `INSERT INTO users (name, email, password_hash, role)
+       VALUES (?, ?, ?, ?)`,
       [cleanName, cleanEmail, passwordHash, 'member']
     );
 
@@ -114,9 +121,9 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
 
     if (!email || !password) {
       return res.status(400).json({
@@ -130,7 +137,11 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    if (email.trim().length > 254 || password.length > 72) {
+    if (
+      email.trim().length > 254 ||
+      password.length > 72 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+    ) {
       return res.status(400).json({
         message: 'Invalid email or password format'
       });
@@ -145,7 +156,7 @@ router.post('/login', async (req, res) => {
 
     const user = rows[0];
 
-    // Use the same message for an unknown email or incorrect password
+    // Keep the error message the same for unknown email or wrong password.
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
       return res.status(401).json({
         message: 'Invalid email or password'
@@ -169,7 +180,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET /api/auth/me (protected)
+// GET /api/auth/me
 router.get('/me', authenticate, async (req, res) => {
   try {
     const [rows] = await pool.query(
