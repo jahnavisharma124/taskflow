@@ -2,9 +2,27 @@ const express = require('express');
 const pool = require('../db');
 const { authenticate, authorize } = require('../middleware/auth');
 const { getProjectAccess } = require('../helpers/access');
+const { validateId } = require('../helpers/validateId');
 
 const router = express.Router();
 router.use(authenticate);
+router.param('id', (req, res, next, id) => {
+  if (!/^[1-9]\d*$/.test(id)) {
+    return res.status(400).json({
+      message: 'ID must be a positive integer'
+    });
+  }
+  next();
+});
+
+router.param('userId', (req, res, next, userId) => {
+  if (!/^[1-9]\d*$/.test(userId)) {
+    return res.status(400).json({
+      message: 'ID must be a positive integer'
+    });
+  }
+  next();
+});
 
 // POST /api/projects  (admin, manager)
 router.post('/', authorize('admin', 'manager'), async (req, res) => {
